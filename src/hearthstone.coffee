@@ -5,12 +5,13 @@
 #   None
 #
 # Commands:
-#   @<Hearthstone card> - Return <Hearthstone card>'s stats: name - mana - race - type - attack/hlth - descr
-#   @more <Hearthstone card> - Return more of the <Hearthstone card>'s stats
+#   hs me <Hearthstone card> - Return <Hearthstone card>'s information.
 #
 # Author:
-#   sylturner
+#   Ewan Walker
 #
+
+api_key = process.env.HEARTHSTONE_API
 
 module.exports = (robot) ->
 
@@ -18,24 +19,27 @@ module.exports = (robot) ->
     json.filter (card) ->
       card.name.toLowerCase() is name.toLowerCase()
 
-  robot.hear /^@(more )*(.+)/, (msg) ->
-    more = msg.match[1]
-    name = msg.match[2]
+  robot.respond /hs me *(.+)/, (msg) ->
+    more = "test"
+    name = msg.match[1]
     additional = more != undefined
     robot.fetchCard msg, name, (card) ->
       robot.sendCard(card, msg, additional)
 
   robot.fetchCard = (msg, name, callback) ->
-    msg.http('http://hearthstonecards.herokuapp.com/hearthstone.json').get() (err, res, body) ->
-      data = JSON.parse(body)
-      card = robot.getByName(data, name)
-      callback(card)
+    msg.http('https://omgvamp-hearthstone-v1.p.mashape.com/cards/' + name.toLowerCase()).header('X-Mashape-Key', api_key).get() (err, res, body) ->
+      try
+        data = JSON.parse(body)
+        card = robot.getByName(data, name)
+        callback(card)
+      catch e
+        msg.send "I couldn't find that card."
 
   robot.sendCard = (card, msg, additional) ->
     if card.length > 0
-      msg.send "#{card[0].name} - Mana: #{card[0].mana} - Race: #{card[0].race} - Type: #{card[0].type} - Attack/Health: #{card[0].attack}/#{card[0].health} - Descr: #{card[0].descr}"
+      msg.send "#{card[0].name} | Mana: #{card[0].cost} | Race: #{card[0].race || 'N/A'} | Type: #{card[0].type} | Attack/Health: #{card[0].attack || '-- ' }/#{card[0].health || ' --'} | Desc: #{card[0].text}"
       if additional
-        msg.send "Flavor: #{card[0].flavorText} Rarity: #{card[0].rarity}"
-        msg.send "http://hearthstonecards.herokuapp.com/cards/medium/#{card[0].image}.png"
+        msg.send "Flavor: #{card[0].flavor} || Rarity: #{card[0].rarity}"
+        msg.send "#{card[0].img}"
     else
-      msg.send "I can't find that card"
+      msg.send "I couldn't find that card."
