@@ -8,7 +8,7 @@
 #   hs me <Hearthstone card> - Return <Hearthstone card>'s information.
 #
 # Author:
-#   Ewan Walker
+#   sylturner / Ewan Walker
 #
 
 api_key = process.env.HEARTHSTONE_API
